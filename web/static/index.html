@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="referrer" content="no-referrer">
+<!-- Offline-first hardening: nothing may load from anywhere but this origin. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src data:; font-src 'none'; base-uri 'none'; object-src 'none'; form-action 'none'">
+<title>Echo</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css?v=apple4">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="app">
+
+  <header class="topbar">
+    <button id="sidebar-toggle" class="btn tiny sidebar-toggle" aria-label="Toggle session list" aria-expanded="false" aria-controls="sidebar">Sessions</button>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Echo</div>
+    <nav class="tabs" aria-label="Views">
+      <a href="#chat" id="tab-chat" class="tab" aria-current="page">Chat</a>
+      <a href="#settings" id="tab-settings" class="tab">Settings</a>
+    </nav>
+    <div class="conn" role="status" aria-live="polite" title="Connection status">
+      <span id="status-dot" class="dot idle" aria-hidden="true"></span>
+      <span id="status-label">idle</span>
+      <span id="reconnecting" class="reconnecting" hidden>reconnecting…</span>
+    </div>
+  </header>
+
+  <div id="server-banner" class="banner server-banner" role="alert" hidden>
+    <span>Echo server unreachable — is it running? <code>python -m app.serve</code></span>
+    <button id="banner-retry" class="btn tiny">Retry</button>
+    <button id="banner-dismiss" class="banner-dismiss" aria-label="Dismiss">×</button>
+  </div>
+
+  <div id="error-bar" class="banner error-bar" role="alert" hidden>
+    <span id="error-text"></span>
+    <button id="error-dismiss" class="banner-dismiss" aria-label="Dismiss message">×</button>
+  </div>
+
+  <main id="main" tabindex="-1">
+
+    <section id="view-chat" class="view-chat" aria-label="Chat">
+      <div id="backdrop" class="backdrop" hidden></div>
+      <aside id="sidebar" class="sidebar" aria-label="Sessions">
+        <button id="new-chat" class="btn primary block">New chat</button>
+        <ul id="session-list" class="session-list"></ul>
+      </aside>
+      <section class="chat-main">
+        <div class="chat-head"><span id="chat-title">New chat</span></div>
+        <div id="thread" class="thread" role="log" aria-label="Conversation">
+          <div id="thread-empty" class="thread-empty"><span class="hero-title">Hi, I'm Echo.</span>
+          <span class="hero-sub">Ask me anything — I can remember things, read your documents, send emails, run on a schedule and speak out loud. Everything stays on this machine.</span>
+          <span class="hero-chips">
+            <button type="button" class="chip" data-fill="What can you do?">What can you do?</button>
+            <button type="button" class="chip" data-fill="Remember this: my sister's birthday is May 3">Remember my sister's birthday is May 3</button>
+            <button type="button" class="chip" data-fill="Search my documents and tell me what's in them">Search my documents</button>
+            <button type="button" class="chip" data-fill="Send a birthday wish to my sister">Send a birthday email 🎂</button>
+          </span></div>
+        </div>
+        <form id="composer" class="composer">
+          <label class="visually-hidden" for="msg-input">Message</label>
+          <textarea id="msg-input" rows="1" maxlength="32000" placeholder="Message Echo — Enter to send, Shift+Enter for a new line"></textarea>
+          <div class="composer-actions">
+            <button type="button" id="interrupt" class="btn" disabled>Interrupt</button>
+            <button type="submit" id="send" class="btn primary" disabled>Send</button>
+          </div>
+        </form>
+      </section>
+    </section>
+
+    <section id="view-settings" class="view-settings" aria-label="Settings" hidden>
+      <nav class="settings-nav" aria-label="Settings sections">
+        <div class="settings-brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div><b>Echo</b><span>Just ask.</span></div>
+        </div>
+        <button class="snav on" data-section="sec-providers"><span class="ni" style="background:#d97757">⚡</span>Brains</button>
+        <button class="snav" data-section="sec-voice"><span class="ni" style="background:#ff375f">🎙</span>Voice</button>
+        <button class="snav" data-section="sec-email"><span class="ni" style="background:#0a84ff">✉</span>Email</button>
+        <button class="snav" data-section="sec-memory"><span class="ni" style="background:#ff9f0a">✦</span>Memory</button>
+        <button class="snav" data-section="sec-documents"><span class="ni" style="background:#5e5ce6">▤</span>Documents</button>
+        <button class="snav" data-section="sec-automations"><span class="ni" style="background:#30d158">◷</span>Automations</button>
+        <button class="snav" data-section="sec-skills"><span class="ni" style="background:#bf5af2">✧</span>Skills</button>
+      </nav>
+      <div class="settings-content">
+
+        <section class="ssection on" id="sec-providers">
+          <div class="page-head"><span class="page-tile" style="background:#d97757">⚡</span><h1>Brains</h1></div>
+          <p class="lede">Echo thinks with AI brains from Groq, NVIDIA and friends. Add a key below — it's stored safely in your computer's keychain, never in files. If one brain is busy, Echo automatically tries the next.</p>
+          <div class="settings-col">
+            <div id="active-strip" class="active-strip">Active provider: —</div>
+            <p id="settings-error" class="inline-error" hidden></p>
+            <h2>Connect a brain</h2>
+            <div id="provider-cards" class="provider-cards"></div>
+            <h2>Backup brains</h2>
+            <section class="card failover-card" aria-label="Failover order">
+              <p class="hint">If a brain is busy or offline, Echo tries these next — top first. You can drag nothing, just order them here.</p>
+              <ol id="failover-list" class="failover-list"></ol>
+              <div class="row-end">
+                <button id="save-failover" class="btn">Save order</button>
+                <span id="failover-saved" class="saved-msg" hidden>saved ✓</span>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="ssection" id="sec-voice" hidden>
+          <div class="page-head"><span class="page-tile" style="background:#ff375f">🎙</span><h1>Voice</h1></div>
+          <p class="lede">"Hey Echo" — or the 🎙 button for push-to-talk. Wake detection is muted while Echo speaks, so it never wakes itself.</p>
+          <div class="group-card">
+            <div class="g-row">
+              <div class="g-main"><b>Wake word</b><span>Say "Hey Echo" — or use the 🎙 button for push-to-talk.</span></div>
+              <span class="allowed">On</span>
+            </div>
+            <div class="g-row">
+              <div class="g-main"><b>Echo guard</b><span>Wake detection mutes while Echo speaks — it never wakes itself.</span></div>
+              <span class="allowed">On</span>
+            </div>
+            <div class="g-row">
+              <div class="g-main"><b>Voice extras</b><span>Real mic + spoken replies need one install: <code>pip install -r requirements-voice.txt</code></span></div>
+              <span class="badge off">Not installed</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="ssection" id="sec-email" hidden>
+          <div class="page-head"><span class="page-tile" style="background:#0a84ff">✉</span><h1>Email</h1></div>
+          <p class="lede">One-time Google consent — every send shows you the draft first.</p>
+          <h2>Connection</h2>
+          <div class="group-card">
+            <div class="g-row">
+              <div class="g-main"><b>Gmail</b><span>One-time Google consent. Every send shows you the draft first.</span></div>
+              <span id="email-status" class="allowed">checking…</span>
+            </div>
+            <div class="g-row">
+              <div class="g-main"><b>Birthday email</b><span>"Send a birthday wish to my sister" — Echo writes it, you approve it.</span></div>
+              <span class="allowed">Ready</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="ssection" id="sec-memory" hidden>
+          <div class="page-head"><span class="page-tile" style="background:#ff9f0a">✦</span><h1>Memory</h1></div>
+          <p class="lede">Echo files what matters from your chats. Pin the always-in-head facts; everything else is searched when needed. Nothing leaves this machine.</p>
+          <div id="memory-mount"></div>
+        </section>
+
+        <section class="ssection" id="sec-documents" hidden>
+          <div class="page-head"><span class="page-tile" style="background:#5e5ce6">▤</span><h1>Documents</h1></div>
+          <p class="lede">Ingest files or folders — Echo chunks, indexes twice (keyword + semantic) and cites them as [S1], [S2]… in answers.</p>
+          <div id="documents-mount"></div>
+        </section>
+
+        <section class="ssection" id="sec-automations" hidden>
+          <div class="page-head"><span class="page-tile" style="background:#30d158">◷</span><h1>Automations</h1></div>
+          <p class="lede">Scheduled agent turns — the 8 AM briefing, price watchers. They run through the full harness and notify you.</p>
+          <div id="automations-mount"></div>
+        </section>
+
+        <section class="ssection" id="sec-skills" hidden>
+          <div class="page-head"><span class="page-tile" style="background:#bf5af2">✧</span><h1>Skills</h1></div>
+          <p class="lede">Scripts Echo wrote for you and saved as reusable tools. Every run shows the code and asks first.</p>
+          <div id="skills-mount"></div>
+        </section>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+<noscript><p class="noscript">Echo needs JavaScript to run — it is all local, no third-party code.</p></noscript>
+<script src="app.js?v=apple4"></script>
+  <script src="/settings-nav.js?v=apple4" defer></script>
+  <script src="/voice.js?v=apple4" defer></script>
+  <script src="/memory.js?v=apple4" defer data-mount="memory-mount"></script>
+  <script src="/documents.js?v=apple4" defer data-mount="documents-mount"></script>
+  <script src="/automations.js?v=apple4" defer data-mount="automations-mount"></script>
+  <script src="/skills.js?v=apple4" defer data-mount="skills-mount"></script>
+</body>
+</html>

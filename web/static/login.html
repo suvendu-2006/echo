@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src data:; font-src 'none'; base-uri 'none'; object-src 'none'; form-action 'self'">
+<title>Echo — Sign in</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css?v=apple3">
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="brand-mark login-orb" aria-hidden="true"></div>
+    <h1 id="login-title">Welcome back</h1>
+    <p class="lede">Enter your password to open Echo.</p>
+    <p id="login-error" class="inline-error" hidden></p>
+    <form id="login-form" autocomplete="on">
+      <label class="visually-hidden" for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="Password" required>
+      <div id="confirm-wrap" hidden>
+        <label class="visually-hidden" for="confirm">Confirm password</label>
+        <input type="password" id="confirm" autocomplete="new-password" placeholder="Confirm password">
+      </div>
+      <button type="submit" id="login-go" class="btn primary block">Unlock Echo</button>
+    </form>
+    <p class="login-note">Echo runs on this machine — your password stays local.</p>
+  </div>
+  <script src="login.js?v=apple3"></script>
+</body>
+</html>
